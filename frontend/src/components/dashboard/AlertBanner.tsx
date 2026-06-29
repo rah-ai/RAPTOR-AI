@@ -1,10 +1,10 @@
 /* ─── RAPTOR Alert Banner v2 — Slim, animated, attention-grabbing ─── */
 
 import { motion, AnimatePresence } from 'framer-motion';
-import type { OverallRisk } from '../../types/raptor';
+import type { RiskScore } from '../../types/raptor';
 
 interface Props {
-  risk: OverallRisk;
+  risk: RiskScore;
 }
 
 const BANNER_CONFIG: Record<string, { bg: string; text: string; message: string } | null> = {
