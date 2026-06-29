@@ -35,9 +35,9 @@ COPY --from=frontend-builder /app/frontend/dist ./dist
 # but it ensures the model is generated if missing).
 RUN python -m app.ml.train
 
-# Expose the port (Koyeb and HF Spaces usually route to 8000 or 7860, but read from PORT env)
-ENV PORT=8000
-EXPOSE 8000
+# Expose the port (Hugging Face Spaces requires port 7860)
+ENV PORT=7860
+EXPOSE 7860
 
 # Start the FastAPI unified server
 CMD ["python", "run.py"]
