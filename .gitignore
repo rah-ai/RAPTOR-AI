@@ -1,0 +1,37 @@
+# Node modules
+node_modules/
+frontend/node_modules/
+
+# Python compiled files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Distributions
+frontend/dist/
+backend/dist/
+dist/
+build/
+
+# Large Datasets and Models (Too big for GitHub)
+STRIKE_REPORTS.csv
+backend/data/wildlife_strikes.csv
+# DO NOT ignore raptor_model.joblib, we need it!
+# backend/data/raptor_model.joblib
+
+# IDE and OS files
+.vscode/
+.idea/
+.DS_Store
+*.swp
