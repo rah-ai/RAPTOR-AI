@@ -15,7 +15,7 @@ import httpx
 
 from app.config import (
     OPENSKY_API_URL, AIRPORT_RADIUS_KM, METRES_TO_FEET,
-    KM_TO_DEG_LAT,
+    KM_TO_DEG_LAT, OPENSKY_USERNAME, OPENSKY_PASSWORD
 )
 from app.models import Aircraft, FlightPhase
 
@@ -59,8 +59,14 @@ class OpenSkyService:
 
         try:
             self._last_attempt = now
+            
+            # Use authentication if provided to bypass datacenter limits
+            auth = None
+            if OPENSKY_USERNAME and OPENSKY_PASSWORD:
+                auth = (OPENSKY_USERNAME, OPENSKY_PASSWORD)
+                
             async with httpx.AsyncClient(timeout=15.0) as client:
-                response = await client.get(OPENSKY_API_URL, params=params)
+                response = await client.get(OPENSKY_API_URL, params=params, auth=auth)
 
                 if response.status_code == 429:
                     # Rate limited — increase backoff

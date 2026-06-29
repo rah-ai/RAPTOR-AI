@@ -14,8 +14,10 @@ AIRPORTS_CSV = DATA_DIR / "airports.csv"
 RUNWAYS_CSV = DATA_DIR / "runways.csv"
 STRIKES_CSV = DATA_DIR / "wildlife_strikes.csv"
 
-# ──────────────────────────────── API URLs ────────────────────────────────
+# ──────────────────────────────── API URLs & AUTH ────────────────────────
 OPENSKY_API_URL = "https://opensky-network.org/api/states/all"
+OPENSKY_USERNAME = os.getenv("OPENSKY_USERNAME")
+OPENSKY_PASSWORD = os.getenv("OPENSKY_PASSWORD")
 METAR_API_URL = "https://aviationweather.gov/api/data/metar"
 OURAIRPORTS_AIRPORTS_URL = "https://davidmegginson.github.io/ourairports-data/airports.csv"
 OURAIRPORTS_RUNWAYS_URL = "https://davidmegginson.github.io/ourairports-data/runways.csv"

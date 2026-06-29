@@ -167,16 +167,25 @@ async def _load_historical_data(icao: str):
 
                 # Build strike records (limit to 500 for performance)
                 for _, row in airport_df.head(500).iterrows():
+                    
+                    def safe_float(val):
+                        if pd.isna(val) or val is None or str(val).strip() == "":
+                            return None
+                        try:
+                            return float(str(val).replace(",", ""))
+                        except ValueError:
+                            return None
+
                     strike = HistoricalStrike(
-                        latitude=float(row["LATITUDE"]) if pd.notna(row.get("LATITUDE")) else None,
-                        longitude=float(row["LONGITUDE"]) if pd.notna(row.get("LONGITUDE")) else None,
+                        latitude=safe_float(row.get("LATITUDE")),
+                        longitude=safe_float(row.get("LONGITUDE")),
                         date=str(row.get("INCIDENT_DATE", "")),
                         time_of_day=str(row.get("TIME_OF_DAY", "")),
                         species=str(row.get("SPECIES", "Unknown")) if pd.notna(row.get("SPECIES")) else "Unknown",
-                        altitude_ft=float(row["HEIGHT"]) if pd.notna(row.get("HEIGHT")) else None,
+                        altitude_ft=safe_float(row.get("HEIGHT")),
                         phase_of_flight=str(row.get("PHASE_OF_FLIGHT", "")) if pd.notna(row.get("PHASE_OF_FLIGHT")) else "",
                         damage=str(row.get("DAMAGE_LEVEL", "None")) if pd.notna(row.get("DAMAGE_LEVEL")) else "None",
-                        cost=float(row["COST_REPAIRS"]) if pd.notna(row.get("COST_REPAIRS")) else None,
+                        cost=safe_float(row.get("COST_REPAIRS")),
                         airport_icao=icao,
                     )
                     strikes.append(strike)
