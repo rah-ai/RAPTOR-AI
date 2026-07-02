@@ -239,7 +239,7 @@ export default function Dashboard({ theme, toggleTheme }: Props) {
 
         <div style={{ textAlign: 'center' }}>
           <span className="mono" style={{ fontSize: '0.75rem', color: 'var(--text-muted)', letterSpacing: '0.12em' }}>
-            CONNECTING TO {icao}
+            CONNECTING TO {isDemoMode ? DEMO_AIRPORT_ICAO : icao}
           </span>
           <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: 6, opacity: 0.5 }}>
             Loading weather · aircraft · risk analysis
