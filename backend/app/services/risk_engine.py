@@ -234,6 +234,7 @@ def compute_ml_score(
     aircraft: Aircraft,
     weather: Optional[WeatherData],
     historical_density: float,
+    lon: float,
     now: Optional[datetime] = None,
     live_bird_density: float = 0.0,
 ) -> float:
@@ -263,9 +264,13 @@ def compute_ml_score(
     # Altitude band
     alt_band = get_altitude_band(aircraft.altitude_ft)
 
+    # Convert UTC hour to approximate Local Solar Time for the ML model
+    # (since the model was trained on local-time FAA data)
+    local_hour = int((now.hour + (lon / 15.0))) % 24
+
     features = {
         "month": now.month,
-        "hour": now.hour,
+        "hour": local_hour,
         "phase_of_flight": phase_val,
         "sky_condition": sky_val,
         "precipitation": precip,
@@ -311,7 +316,7 @@ def compute_aircraft_risk(
     rule_score, factors = compute_rule_based_score(aircraft, weather, lat, lon, now)
 
     # Layer 2
-    ml_score = compute_ml_score(aircraft, weather, historical_density, now, live_bird_density)
+    ml_score = compute_ml_score(aircraft, weather, historical_density, lon, now, live_bird_density)
 
     # Combined score
     final_score = 0.5 * rule_score + 0.5 * ml_score
@@ -434,7 +439,7 @@ def compute_forecast(
             synthetic, weather, lat, lon, forecast_time,
         )
         ml_score = compute_ml_score(
-            synthetic, weather, historical_density, forecast_time, live_bird_density,
+            synthetic, weather, historical_density, lon, forecast_time, live_bird_density,
         )
 
         score = 0.5 * rule_score + 0.5 * ml_score

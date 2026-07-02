@@ -1,8 +1,8 @@
 from fastapi import APIRouter
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from app.models import (
     LiveStateResponse, Aircraft, AircraftRisk, RiskScore, RiskLevel,
-    FlightPhase, WeatherData, CloudLayer
+    FlightPhase, WeatherData, CloudLayer, ForecastEntry, RiskFactor
 )
 from app.services.risk_engine import compute_aircraft_risk, compute_overall_risk
 
