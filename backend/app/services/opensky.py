@@ -118,17 +118,30 @@ class OpenSkyService:
 
     def _generate_mock_aircraft(self, lat: float, lon: float) -> list[Aircraft]:
         """Fallback to generate realistic mock aircraft if OpenSky is rate limiting unauthenticated users."""
+        from app.state import app_state
         import random
         mocks = []
         for i in range(3):
             # Randomize around the airport tightly so they are visible at default zoom
             mlat = lat + random.uniform(-0.04, 0.04)
             mlon = lon + random.uniform(-0.04, 0.04)
-            malt = random.uniform(1500, 12000)
+            
+            # If there's an active global alert for this airport, force the first mock plane to be the alerted one!
+            is_alert = (i == 0 and 
+                        app_state.current_airport and 
+                        app_state.active_global_alert_icao == app_state.current_airport.icao)
+                        
+            if is_alert and app_state.active_global_alert_callsign:
+                ac_callsign = app_state.active_global_alert_callsign
+                malt = random.uniform(100, 400) # Force extremely low altitude to trigger EXTREME risk
+            else:
+                ac_callsign = f"{random.choice(['DAL', 'UAL', 'AAL', 'JBU'])}{random.randint(100,999)}"
+                malt = random.uniform(1500, 12000)
+                
             mocks.append(Aircraft(
                 icao24=f"mock{i}",
-                callsign=f"{random.choice(['DAL', 'UAL', 'AAL', 'JBU'])}{random.randint(100,999)}",
-                origin_country="United States",
+                callsign=ac_callsign,
+                origin_country="United States" if not is_alert else "International",
                 latitude=mlat,
                 longitude=mlon,
                 altitude_ft=malt,

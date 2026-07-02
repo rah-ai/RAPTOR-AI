@@ -41,6 +41,10 @@ class AppState:
         self.historical_density: float = 0.3  # Default for intl airports
         self.live_bird_density: float = 0.0
         self.websocket_clients: list = []
+        
+        # Track global alerts for pitch demonstration continuity
+        self.active_global_alert_icao: Optional[str] = None
+        self.active_global_alert_callsign: Optional[str] = None
 
     async def set_airport(self, airport: Airport):
         async with self._lock:

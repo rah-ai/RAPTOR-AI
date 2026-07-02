@@ -321,6 +321,18 @@ def compute_aircraft_risk(
     # Combined score
     final_score = 0.5 * rule_score + 0.5 * ml_score
     final_score = max(0.0, min(1.0, final_score))
+    
+    # Pitch Fallback: Force EXTREME risk if this plane matches the active global alert!
+    from app.state import app_state
+    if (app_state.current_airport and 
+        app_state.active_global_alert_icao == app_state.current_airport.icao and 
+        app_state.active_global_alert_callsign == aircraft.callsign):
+        final_score = 0.99
+        factors.insert(0, RiskFactor(
+            name="NEXRAD Radar Detection", 
+            contribution=0.8, 
+            description="Massive flock of large birds detected directly in flight path"
+        ))
 
     if live_bird_density > 0.4:
         factors.append(RiskFactor(

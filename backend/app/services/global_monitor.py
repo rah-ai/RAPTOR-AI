@@ -44,6 +44,11 @@ async def poll_global_airports():
                 mock_score = random.uniform(0.90, 0.99)
                 ac_callsign = f"{random.choice(['UAE', 'BAW', 'QFA', 'AFR', 'AIC'])}{random.randint(100, 999)}"
                 logger.warning(f"GLOBAL ALERT: Extreme risk detected at {airport.icao} for {ac_callsign} (Score: {mock_score:.2f})")
+                
+                # Store in app_state so that if the user clicks the alert and navigates to the airport,
+                # the system knows to render this exact plane with extreme risk!
+                app_state.active_global_alert_icao = airport.icao
+                app_state.active_global_alert_callsign = ac_callsign
                     
                 if app_state.websocket_clients:
                     alert_data = {
