@@ -69,6 +69,7 @@ export interface RiskScore {
   ml_score: number;
   factors: RiskFactor[];
   primary_factor: string;
+  recommended_actions?: string[];
 }
 
 export interface AircraftRisk {

@@ -364,6 +364,12 @@ def compute_overall_risk(aircraft_risks: list[AircraftRisk]) -> RiskScore:
     overall = max(0.0, min(1.0, overall))
 
     level = score_to_level(overall)
+    
+    recommended_actions = []
+    if level == RiskLevel.EXTREME:
+        recommended_actions = ["TRIGGER_ACOUSTIC_CANNONS", "ATC_DATALINK_ALERT"]
+    elif level == RiskLevel.HIGH:
+        recommended_actions = ["ARM_ACOUSTIC_CANNONS", "ATC_DATALINK_ALERT"]
 
     return RiskScore(
         score=round(overall, 4),
@@ -372,6 +378,7 @@ def compute_overall_risk(aircraft_risks: list[AircraftRisk]) -> RiskScore:
         ml_score=round(max_risk.risk.ml_score, 4),
         factors=max_risk.risk.factors,
         primary_factor=max_risk.risk.primary_factor,
+        recommended_actions=recommended_actions,
     )
 
 

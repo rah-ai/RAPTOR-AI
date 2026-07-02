@@ -21,7 +21,7 @@ from app.services.scheduler import start_scheduler, stop_scheduler
 from app.ml.predictor import predictor
 from app.state import app_state
 
-from app.routers import airports, live, historical, alerts
+from app.routers import airports, live, historical, alerts, demo
 
 # ──────────────────────────────── LOGGING ────────────────────────────────
 
@@ -85,6 +85,7 @@ app.include_router(airports.router)
 app.include_router(live.router)
 app.include_router(historical.router)
 app.include_router(alerts.router)
+app.include_router(demo.router)
 
 
 # ──────────────────────────────── WEBSOCKET ────────────────────────────────

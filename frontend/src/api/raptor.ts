@@ -35,6 +35,9 @@ export const api = {
   getLiveState: () =>
     fetchJSON<LiveStateResponse>('/api/live/state'),
 
+  getDemoState: () =>
+    fetchJSON<LiveStateResponse>('/demo/1549'),
+
   getHistoricalStrikes: () =>
     fetchJSON<HistoricalStrike[]>('/api/historical/strikes'),
 

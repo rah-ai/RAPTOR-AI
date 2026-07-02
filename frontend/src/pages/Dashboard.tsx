@@ -6,12 +6,14 @@ import { motion } from 'framer-motion';
 import { api } from '../api/raptor';
 import { useWebSocket } from '../hooks/useWebSocket';
 import type { DashboardState } from '../types/raptor';
+import { DEMO_AIRPORT_ICAO } from '../utils/demoState';
 
 import StatusBar from '../components/dashboard/StatusBar';
 import AlertBanner from '../components/dashboard/AlertBanner';
 import AircraftMap from '../components/dashboard/AircraftMap';
 import RiskGauge from '../components/dashboard/RiskGauge';
 import WeatherPanel from '../components/dashboard/WeatherPanel';
+import DefensePanel from '../components/dashboard/DefensePanel';
 import ForecastChart from '../components/dashboard/ForecastChart';
 import AircraftTable from '../components/dashboard/AircraftTable';
 import AlertFeed from '../components/dashboard/AlertFeed';
@@ -29,6 +31,7 @@ export default function Dashboard({ theme, toggleTheme }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [selectedAircraft, setSelectedAircraft] = useState<string | null>(null);
   const [loadProgress, setLoadProgress] = useState(0);
+  const [isDemoMode, setIsDemoMode] = useState(false);
 
   const { status: wsStatus, liveState } = useWebSocket(!!state);
 
@@ -40,23 +43,25 @@ export default function Dashboard({ theme, toggleTheme }: Props) {
 
   // Merge WebSocket updates into state
   useEffect(() => {
-    if (liveState && state) {
+    if (isDemoMode) return; // Prevent live updates from overwriting demo
+    const activeLiveState = liveState;
+    if (activeLiveState && state) {
       setState(prev => prev ? {
         ...prev,
-        aircraft: liveState.aircraft,
-        weather: liveState.weather ?? prev.weather,
-        overall_risk: liveState.overall_risk,
-        forecast: liveState.forecast,
-        aircraft_count: liveState.aircraft_count,
-        last_updated: liveState.last_updated,
-        opensky_cached: liveState.opensky_cached,
+        aircraft: activeLiveState.aircraft,
+        weather: activeLiveState.weather ?? prev.weather,
+        overall_risk: activeLiveState.overall_risk,
+        forecast: activeLiveState.forecast,
+        aircraft_count: activeLiveState.aircraft_count,
+        last_updated: activeLiveState.last_updated,
+        opensky_cached: activeLiveState.opensky_cached,
       } : prev);
     }
-  }, [liveState]);
+  }, [liveState, isDemoMode, state?.airport?.icao]);
 
   // HTTP polling fallback if WebSocket disconnected
   useEffect(() => {
-    if (wsStatus !== 'disconnected' || !state) return;
+    if (wsStatus !== 'disconnected' || !state || isDemoMode) return;
     const interval = setInterval(async () => {
       try {
         const live = await api.getLiveState();
@@ -76,7 +81,7 @@ export default function Dashboard({ theme, toggleTheme }: Props) {
 
   // Poll alerts separately
   useEffect(() => {
-    if (!state) return;
+    if (!state || isDemoMode) return;
     const interval = setInterval(async () => {
       try {
         const alerts = await api.getAlerts();
@@ -111,7 +116,30 @@ export default function Dashboard({ theme, toggleTheme }: Props) {
     }
   };
 
+  const loadDemo = async () => {
+    setIsDemoMode(true);
+    navigate(`/dashboard/${DEMO_AIRPORT_ICAO}`);
+    
+    // Fetch the real ML-processed demo state from the backend
+    try {
+      const demoLiveState = await api.getDemoState();
+      setState(prev => prev ? {
+        ...prev,
+        aircraft: demoLiveState.aircraft,
+        weather: demoLiveState.weather ?? prev.weather,
+        overall_risk: demoLiveState.overall_risk,
+        forecast: demoLiveState.forecast,
+        aircraft_count: demoLiveState.aircraft_count,
+        last_updated: demoLiveState.last_updated,
+        opensky_cached: demoLiveState.opensky_cached,
+      } : prev);
+    } catch (err: any) {
+      console.error('Failed to load ML demo data:', err);
+    }
+  };
+
   const handleAirportSwitch = useCallback((newIcao: string) => {
+    setIsDemoMode(false);
     navigate(`/dashboard/${newIcao}`);
   }, [navigate]);
 
@@ -252,15 +280,48 @@ export default function Dashboard({ theme, toggleTheme }: Props) {
         overflow: 'hidden',
       }}
     >
-      {/* Status Bar */}
+      {/* Demo Mode Banner */}
+      {isDemoMode && (
+        <div style={{ background: 'var(--risk-extreme)', color: '#fff', textAlign: 'center', padding: '6px', fontSize: '0.8rem', fontWeight: 600, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '12px', zIndex: 3000 }}>
+          ⚠ DEMO SIMULATION: US Airways Flight 1549 (Jan 15, 2009)
+          <button onClick={() => setIsDemoMode(false)} style={{ background: 'rgba(0,0,0,0.3)', padding: '4px 12px', borderRadius: 4, color: 'white', border: 'none', cursor: 'pointer', fontSize: '0.75rem' }}>Exit Demo</button>
+        </div>
+      )}
+      
       <StatusBar
         airport={state.airport}
-        wsStatus={wsStatus}
-        lastUpdated={state.last_updated}
+        wsStatus={isDemoMode ? 'connected' : wsStatus}
+        lastUpdated={isDemoMode ? MOCK_DEMO_STATE.last_updated : state.last_updated}
         theme={theme}
         toggleTheme={toggleTheme}
         onAirportSwitch={handleAirportSwitch}
       />
+      
+      {!isDemoMode && (
+        <div style={{ position: 'absolute', top: 12, left: '50%', transform: 'translateX(-50%)', zIndex: 2500 }}>
+          <button
+            onClick={() => {
+              loadDemo();
+            }}
+            style={{
+              background: 'var(--accent-live)',
+              color: 'var(--text-inverse)',
+              border: 'none',
+              padding: '6px 14px',
+              borderRadius: '20px',
+              fontSize: '0.75rem',
+              fontWeight: 600,
+              cursor: 'pointer',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
+          >
+            ▶ Run Demo Simulation (Flight 1549)
+          </button>
+        </div>
+      )}
 
       {/* Alert Banner */}
       <AlertBanner risk={state.overall_risk} />
@@ -331,6 +392,9 @@ export default function Dashboard({ theme, toggleTheme }: Props) {
           </motion.div>
           <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5, delay: 0.2 }}>
             <WeatherPanel weather={state.weather} />
+          </motion.div>
+          <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5, delay: 0.25 }}>
+            <DefensePanel overallRisk={state.overall_risk} />
           </motion.div>
           <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5, delay: 0.3 }}>
             <ForecastChart forecast={state.forecast} />

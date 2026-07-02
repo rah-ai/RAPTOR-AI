@@ -129,6 +129,7 @@ class RiskScore(BaseModel):
     ml_score: float = 0.0
     factors: list[RiskFactor] = []
     primary_factor: str = ""
+    recommended_actions: list[str] = []
 
 
 class AircraftRisk(BaseModel):
