@@ -235,6 +235,7 @@ def compute_ml_score(
     weather: Optional[WeatherData],
     historical_density: float,
     now: Optional[datetime] = None,
+    live_bird_density: float = 0.0,
 ) -> float:
     """
     Layer 2: XGBoost model inference.
@@ -270,7 +271,7 @@ def compute_ml_score(
         "precipitation": precip,
         "altitude_band": alt_band,
         "season": season_code,
-        "historical_density": historical_density,
+        "historical_density": max(historical_density, live_bird_density),
     }
 
     return predictor.predict(features)
@@ -282,6 +283,7 @@ def compute_aircraft_risk(
     lat: float,
     lon: float,
     historical_density: float,
+    live_bird_density: float = 0.0,
     now: Optional[datetime] = None,
 ) -> AircraftRisk:
     """
@@ -309,11 +311,18 @@ def compute_aircraft_risk(
     rule_score, factors = compute_rule_based_score(aircraft, weather, lat, lon, now)
 
     # Layer 2
-    ml_score = compute_ml_score(aircraft, weather, historical_density, now)
+    ml_score = compute_ml_score(aircraft, weather, historical_density, now, live_bird_density)
 
     # Combined score
     final_score = 0.5 * rule_score + 0.5 * ml_score
     final_score = max(0.0, min(1.0, final_score))
+
+    if live_bird_density > 0.4:
+        factors.append(RiskFactor(
+            name="Live Bird Flock Detected",
+            contribution=0.3,
+            description=f"Live eBird radar shows elevated density ({live_bird_density:.2f})",
+        ))
 
     # Determine risk level
     level = score_to_level(final_score)
@@ -337,7 +346,11 @@ def compute_aircraft_risk(
     )
 
 
-def compute_overall_risk(aircraft_risks: list[AircraftRisk]) -> RiskScore:
+def compute_overall_risk(
+    aircraft_risks: list[AircraftRisk], 
+    historical_density: float = 0.0,
+    live_bird_density: float = 0.0,
+) -> RiskScore:
     """Compute the overall airport risk from all aircraft risks."""
     if not aircraft_risks:
         return RiskScore(
@@ -387,6 +400,7 @@ def compute_forecast(
     lon: float,
     weather: Optional[WeatherData],
     historical_density: float,
+    live_bird_density: float = 0.0,
     now: Optional[datetime] = None,
 ) -> list[ForecastEntry]:
     """
@@ -420,7 +434,7 @@ def compute_forecast(
             synthetic, weather, lat, lon, forecast_time,
         )
         ml_score = compute_ml_score(
-            synthetic, weather, historical_density, forecast_time,
+            synthetic, weather, historical_density, forecast_time, live_bird_density,
         )
 
         score = 0.5 * rule_score + 0.5 * ml_score

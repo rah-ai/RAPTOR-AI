@@ -107,6 +107,7 @@ export interface ForecastEntry {
   is_dawn: boolean;
   is_dusk: boolean;
   label: string;
+  factors?: RiskFactor[];
 }
 
 export interface Runway {

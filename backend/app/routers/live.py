@@ -22,3 +22,20 @@ router = APIRouter(prefix="/api/live", tags=["live"])
 async def get_live_state():
     """Get current live dashboard state."""
     return app_state.get_live_state()
+
+@router.websocket("")
+async def websocket_endpoint(websocket: WebSocket):
+    """WebSocket connection for global alerts."""
+    await websocket.accept()
+    app_state.websocket_clients.append(websocket)
+    try:
+        while True:
+            # Keep connection open, wait for client messages if any
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        if websocket in app_state.websocket_clients:
+            app_state.websocket_clients.remove(websocket)
+    except Exception as e:
+        logger.error(f"WebSocket error: {e}")
+        if websocket in app_state.websocket_clients:
+            app_state.websocket_clients.remove(websocket)

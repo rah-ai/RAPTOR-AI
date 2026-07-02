@@ -137,9 +137,9 @@ class AirportDatabase:
                 runway = Runway(
                     airport_icao=icao,
                     runway_id=str(row.get("id", "")),
-                    length_ft=float(row.get("length_ft", 0) or 0),
-                    width_ft=float(row.get("width_ft", 0) or 0),
-                    bearing=float(row.get("le_heading_degT", 0) or 0),
+                    length_ft=self._safe_float(row.get("length_ft")) or 0.0,
+                    width_ft=self._safe_float(row.get("width_ft")) or 0.0,
+                    bearing=self._safe_float(row.get("le_heading_degT")) or 0.0,
                     le_latitude=self._safe_float(row.get("le_latitude_deg")),
                     le_longitude=self._safe_float(row.get("le_longitude_deg")),
                     he_latitude=self._safe_float(row.get("he_latitude_deg")),
@@ -245,7 +245,7 @@ class AirportDatabase:
             country=str(row.get("iso_country", "")),
             latitude=float(row.get("latitude_deg", 0)),
             longitude=float(row.get("longitude_deg", 0)),
-            elevation_ft=float(row.get("elevation_ft", 0) or 0),
+            elevation_ft=self._safe_float(row.get("elevation_ft")) or 0.0,
             type=str(row.get("type", "")),
         )
 

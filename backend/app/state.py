@@ -39,6 +39,7 @@ class AppState:
         self.opensky_cache_time: Optional[datetime] = None
         self.historical_data_available: bool = True
         self.historical_density: float = 0.3  # Default for intl airports
+        self.live_bird_density: float = 0.0
         self.websocket_clients: list = []
 
     async def set_airport(self, airport: Airport):

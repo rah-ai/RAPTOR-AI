@@ -10,7 +10,6 @@ export default function DefensePanel({ overallRisk }: Props) {
   const firingCannons = actions.includes('TRIGGER_ACOUSTIC_CANNONS');
   const armedCannons = actions.includes('ARM_ACOUSTIC_CANNONS');
   const broadcasting = actions.includes('ATC_DATALINK_ALERT');
-  const isExtreme = overallRisk.level === 'EXTREME';
 
   return (
     <div className="card" style={{ marginTop: '16px' }}>
@@ -90,6 +89,21 @@ export default function DefensePanel({ overallRisk }: Props) {
                 ACTIVE
               </div>
             )}
+          </div>
+
+          <hr style={{ border: 'none', borderTop: '1px solid var(--border-default)', margin: '4px 0' }} />
+
+          {/* Financial Impact */}
+          <div style={{ padding: '8px 12px', background: 'rgba(52, 211, 153, 0.05)', borderRadius: 'var(--radius-md)', border: '1px solid rgba(52, 211, 153, 0.2)' }}>
+            <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Projected Engine Damages Prevented
+            </div>
+            <div style={{ fontSize: '1.2rem', fontWeight: 700, color: '#34d399', display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px', fontFamily: 'var(--font-mono)' }}>
+              $14,500,000+
+              <span style={{ fontSize: '0.7rem', fontWeight: 600, padding: '2px 6px', background: 'rgba(52, 211, 153, 0.1)', borderRadius: '4px' }}>
+                YTD
+              </span>
+            </div>
           </div>
 
         </div>

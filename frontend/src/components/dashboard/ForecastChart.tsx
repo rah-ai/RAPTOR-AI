@@ -1,5 +1,6 @@
 /* ─── RAPTOR Forecast Chart v2 — Bar chart with risk coloring ─── */
 
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import type { ForecastEntry } from '../../types/raptor';
 
@@ -18,6 +19,8 @@ const riskColor = (level: string) => {
 };
 
 export default function ForecastChart({ forecast }: Props) {
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+
   if (!forecast || forecast.length === 0) {
     return (
       <div className="card">
@@ -59,15 +62,60 @@ export default function ForecastChart({ forecast }: Props) {
               : label;
 
             return (
-              <div key={idx} style={{
-                flex: 1,
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: '3px',
-                height: '100%',
-                justifyContent: 'flex-end',
-              }}>
+              <div 
+                key={idx} 
+                onClick={() => setSelectedIndex(idx === selectedIndex ? null : idx)}
+                style={{
+                  flex: 1,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: '3px',
+                  height: '100%',
+                  justifyContent: 'flex-end',
+                  position: 'relative',
+                  cursor: 'pointer',
+                }}
+              >
+                {/* Click Tooltip */}
+                {selectedIndex === idx && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: 5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    style={{
+                      position: 'absolute',
+                      bottom: '100%',
+                      left: '50%',
+                      transform: 'translateX(-50%)',
+                      marginBottom: '10px',
+                      background: 'var(--bg-elevated)',
+                      border: `1px solid ${color}`,
+                      borderRadius: 'var(--radius-sm)',
+                      padding: '8px',
+                      width: '140px',
+                      zIndex: 1000,
+                      boxShadow: 'var(--shadow-lg)',
+                      textAlign: 'left',
+                    }}
+                  >
+                    <div style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '4px' }}>
+                      {timeLabel} Prediction
+                    </div>
+                    <div style={{ fontSize: '0.55rem', color: 'var(--text-secondary)', marginBottom: '4px' }}>
+                      Risk: <span style={{ color, fontWeight: 700 }}>{entry.risk_level}</span>
+                    </div>
+                    {entry.factors && entry.factors.length > 0 && (
+                      <div>
+                        <div style={{ fontSize: '0.5rem', color: 'var(--text-muted)' }}>Top Factors:</div>
+                        {entry.factors.slice(0,2).map((f, i) => (
+                          <div key={i} style={{ fontSize: '0.55rem', color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            • {f.name}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </motion.div>
+                )}
                 {/* Score */}
                 <span className="mono" style={{
                   fontSize: '0.45rem',

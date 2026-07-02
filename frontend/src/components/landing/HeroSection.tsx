@@ -15,7 +15,7 @@ function AnimatedHeadline({ text, delay = 0 }: { text: string; delay?: number })
   return (
     <span style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '0 0.3em' }}>
       {words.map((word, i) => (
-        <span key={i} style={{ overflow: 'hidden', display: 'inline-block' }}>
+        <span key={i} style={{ overflow: 'hidden', display: 'inline-block', padding: '0.2em 0.15em', margin: '-0.2em -0.15em' }}>
           <motion.span
             initial={{ y: '110%', rotateX: 20 }}
             animate={{ y: '0%', rotateX: 0 }}

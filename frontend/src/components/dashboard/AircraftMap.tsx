@@ -1,7 +1,7 @@
 /* ─── RAPTOR Aircraft Map v3 — Satellite toggle, no watermarks, z-index fixes ─── */
 
-import { useEffect, useState } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, CircleMarker, Polyline, useMap } from 'react-leaflet';
+import React, { useEffect, useState } from 'react';
+import { MapContainer, TileLayer, Marker, Popup, CircleMarker, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import type { Airport, AircraftRisk, ApproachCorridor, Runway, HistoricalStrike } from '../../types/raptor';
@@ -110,6 +110,23 @@ function createAirportIcon(): L.DivIcon {
   });
 }
 
+/* ─── Bird Swarm Icon ─── */
+function createBirdIcon(): L.DivIcon {
+  return L.divIcon({
+    className: '',
+    iconSize: [24, 24],
+    iconAnchor: [12, 12],
+    html: `
+      <div style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5)); animation: pulse 1s infinite alternate;">
+        <svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M3 14c2.5-4 7-5 9-2 2-3 6.5-2 9 2-2 1-5 1-6.5-1-1.5-2-3-2-4 0-1.5 2-4.5 2-6.5 1z" fill="#C9303E" stroke="white" stroke-width="1" />
+          <path d="M5 10c2-3 5-4 7-1 2-3 5-2 7 1-1.5.5-4 .5-5-1-1-1.5-2-1.5-3 0-1 1.5-3.5 1.5-5 1z" fill="#C9303E" opacity="0.6" stroke="white" stroke-width="0.5" />
+        </svg>
+      </div>
+    `,
+  });
+}
+
 /* ─── Re-center map ─── */
 function MapController({ center, zoom }: { center: [number, number]; zoom: number }) {
   const map = useMap();
@@ -127,7 +144,7 @@ const TILES = {
 };
 
 export default function AircraftMap({
-  airport, aircraft, corridors, runways: _runways,
+  airport, aircraft,
   historicalStrikes, historicalDataAvailable,
   selectedAircraft, onSelectAircraft,
 }: Props) {
@@ -313,14 +330,28 @@ export default function AircraftMap({
           const color = getRiskColor(ar.risk.level);
           const cs = (ac.callsign || '').trim();
           const isSelected = selectedAircraft === cs;
+          const isExtreme = ar.risk.level === 'EXTREME';
+
+          // Simulate bird flocks directly in front of the aircraft's path
+          const birdFlocks = isExtreme ? [1, 2, 3].map(i => {
+            const hdgRad = ac.heading * (Math.PI / 180);
+            const dist = 0.015 + (i * 0.008); 
+            const bLat = ac.latitude! + (Math.cos(hdgRad) * dist);
+            const bLon = ac.longitude! + (Math.sin(hdgRad) * dist);
+            return [bLat, bLon] as [number, number];
+          }) : [];
 
           return (
-            <Marker
-              key={ac.icao24}
-              position={[ac.latitude, ac.longitude]}
-              icon={createAircraftIcon(ac.heading, color, isSelected, cs)}
-              eventHandlers={{ click: () => onSelectAircraft(cs) }}
-            >
+            <React.Fragment key={ac.icao24}>
+              {birdFlocks.map((pos, idx) => (
+                <Marker key={`${ac.icao24}-bird-${idx}`} position={pos} icon={createBirdIcon()} zIndexOffset={1000} />
+              ))}
+              <Marker
+                position={[ac.latitude, ac.longitude]}
+                icon={createAircraftIcon(ac.heading, color, isSelected, cs)}
+                eventHandlers={{ click: () => onSelectAircraft(cs) }}
+                zIndexOffset={isExtreme ? 900 : 0}
+              >
               <Popup maxWidth={300}>
                 <div style={{ fontFamily: 'var(--font-body)', minWidth: '230px' }}>
                   <div style={{
@@ -382,6 +413,7 @@ export default function AircraftMap({
                 </div>
               </Popup>
             </Marker>
+          </React.Fragment>
           );
         })}
       </MapContainer>

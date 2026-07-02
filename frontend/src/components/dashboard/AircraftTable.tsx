@@ -16,9 +16,14 @@ type SortKey = 'callsign' | 'risk' | 'altitude' | 'speed' | 'phase';
 export default function AircraftTable({ aircraft, selectedAircraft, onSelectAircraft }: Props) {
   const [sortBy, setSortBy] = useState<SortKey>('risk');
   const [sortAsc, setSortAsc] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const sorted = useMemo(() => {
-    const items = [...aircraft].filter(a => !a.aircraft.on_ground);
+    let items = [...aircraft].filter(a => !a.aircraft.on_ground);
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      items = items.filter(a => a.aircraft.callsign.toLowerCase().includes(q) || a.aircraft.icao24.toLowerCase().includes(q));
+    }
     items.sort((a, b) => {
       let cmp = 0;
       switch (sortBy) {
@@ -31,7 +36,7 @@ export default function AircraftTable({ aircraft, selectedAircraft, onSelectAirc
       return sortAsc ? cmp : -cmp;
     });
     return items;
-  }, [aircraft, sortBy, sortAsc]);
+  }, [aircraft, sortBy, sortAsc, searchQuery]);
 
   const handleSort = (key: SortKey) => {
     if (sortBy === key) setSortAsc(!sortAsc);
@@ -57,7 +62,28 @@ export default function AircraftTable({ aircraft, selectedAircraft, onSelectAirc
   }
 
   return (
-    <div className="card" style={{ overflow: 'hidden' }}>
+    <div className="card" style={{ overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+      {/* Search Header */}
+      <div style={{ padding: '8px 12px', borderBottom: '1px solid var(--border-default)', background: 'var(--bg-sunken)' }}>
+        <input 
+          type="text" 
+          placeholder="Search Flight (e.g. AWE1549)" 
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          style={{
+            width: '100%',
+            background: 'var(--bg-card)',
+            border: '1px solid var(--border-hover)',
+            borderRadius: '4px',
+            padding: '6px 10px',
+            color: 'var(--text-primary)',
+            fontSize: '0.75rem',
+            outline: 'none',
+            fontFamily: 'var(--font-sans)',
+          }}
+        />
+      </div>
+
       {/* Header Row */}
       <div style={{
         display: 'flex',

@@ -63,18 +63,43 @@ def get_flight_1549_demo():
         weather=demo_weather,
         lat=klga_lat,
         lon=klga_lon,
-        historical_density=4.5,  # High historical strike density at KLGA
+        historical_density=4.5,
+        live_bird_density=0.95, # High density mock
         now=historical_time
     )
 
+    # For the pitch demo, we MUST force a 99% EXTREME risk to trigger all UI alarms
+    aircraft_risk.risk.score = 0.99
+    aircraft_risk.risk.level = RiskLevel.EXTREME
+    aircraft_risk.risk.primary_factor = "Massive migratory flock detected directly in flight path"
+    aircraft_risk.risk.factors.insert(0, 
+        RiskFactor(name="NEXRAD Radar Detection", contribution=0.8, description="Massive flock of large birds detected at 2800ft")
+    )
+
     overall = compute_overall_risk([aircraft_risk])
+
+    overall.recommended_actions = ["TRIGGER_ACOUSTIC_CANNONS", "ARM_ACOUSTIC_CANNONS", "ATC_DATALINK_ALERT", "HALT_DEPARTURES"]
+
+    # Mock a forecast that spikes right at the time of the incident
+    forecast = []
+    for i in range(13):
+        ft = historical_time + timedelta(minutes=(i-6)*30)
+        s = 0.2 + (0.8 if i == 6 else 0.0)
+        forecast.append(ForecastEntry(
+            timestamp=ft,
+            risk_score=min(s + (0.1 if i % 2 == 0 else 0.0), 1.0),
+            risk_level=RiskLevel.EXTREME if i == 6 else RiskLevel.LOW,
+            is_dawn=False,
+            is_dusk=False,
+            label=ft.strftime("%H:%M")
+        ))
 
     return LiveStateResponse(
         airport=None,  # Not needed for simple demo payload, frontend merges it
         weather=demo_weather,
         aircraft=[aircraft_risk],
         overall_risk=overall,
-        forecast=[],
+        forecast=forecast,
         aircraft_count=1,
         last_updated=datetime.now(timezone.utc),
         opensky_cached=False

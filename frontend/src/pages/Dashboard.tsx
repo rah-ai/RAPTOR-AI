@@ -38,8 +38,9 @@ export default function Dashboard({ theme, toggleTheme }: Props) {
   // Load airport on mount or ICAO change
   useEffect(() => {
     if (!icao) return;
+    if (isDemoMode) return; // loadDemo handles fetching in demo mode
     loadAirport(icao);
-  }, [icao]);
+  }, [icao, isDemoMode]);
 
   // Merge WebSocket updates into state
   useEffect(() => {
@@ -118,23 +119,63 @@ export default function Dashboard({ theme, toggleTheme }: Props) {
 
   const loadDemo = async () => {
     setIsDemoMode(true);
-    navigate(`/dashboard/${DEMO_AIRPORT_ICAO}`);
-    
-    // Fetch the real ML-processed demo state from the backend
+    setLoading(true);
+    setError(null);
+    setLoadProgress(0);
+
+    const progressInterval = setInterval(() => {
+      setLoadProgress(p => Math.min(p + Math.random() * 15, 90));
+    }, 200);
+
     try {
+      // 1. Fetch base airport state for KLGA
+      const dashState = await api.selectAirport(DEMO_AIRPORT_ICAO);
+      // 2. Fetch ML processed demo state
       const demoLiveState = await api.getDemoState();
-      setState(prev => prev ? {
-        ...prev,
-        aircraft: demoLiveState.aircraft,
-        weather: demoLiveState.weather ?? prev.weather,
-        overall_risk: demoLiveState.overall_risk,
-        forecast: demoLiveState.forecast,
-        aircraft_count: demoLiveState.aircraft_count,
-        last_updated: demoLiveState.last_updated,
-        opensky_cached: demoLiveState.opensky_cached,
-      } : prev);
+      
+      setLoadProgress(100);
+      
+      setTimeout(() => {
+        // 3. Merge and inject critical alert
+        setState({
+          ...dashState,
+          aircraft: demoLiveState.aircraft,
+          weather: demoLiveState.weather ?? dashState.weather,
+          overall_risk: demoLiveState.overall_risk,
+          forecast: demoLiveState.forecast,
+          aircraft_count: demoLiveState.aircraft_count,
+          last_updated: demoLiveState.last_updated,
+          opensky_cached: demoLiveState.opensky_cached,
+          alerts: [{
+            id: 'demo-alert-1549',
+            timestamp: demoLiveState.last_updated || new Date().toISOString(),
+            severity: 'critical',
+            title: 'MULTIPLE BIRD STRIKES DETECTED',
+            message: 'CRITICAL: Flight AWE1549 has encountered a dense flock of Canada Geese at 2800ft. Dual engine failure reported.',
+            risk_level: 'EXTREME',
+            aircraft_callsign: 'AWE1549'
+          }]
+        });
+
+        // Trigger the massive global popup + audio siren for the demo pitch
+        window.dispatchEvent(new CustomEvent('demo_alert', {
+          detail: {
+            aircraft_callsign: 'AWE1549',
+            risk_score: 0.99,
+            message: 'CRITICAL: Flight AWE1549 has encountered a dense flock of Canada Geese at 2800ft. Dual engine failure reported.'
+          }
+        }));
+
+        navigate(`/dashboard/${DEMO_AIRPORT_ICAO}`);
+        setLoading(false);
+      }, 400);
+
     } catch (err: any) {
       console.error('Failed to load ML demo data:', err);
+      setError(`Failed to load Demo Simulation: ${err.message}`);
+      setLoading(false);
+    } finally {
+      clearInterval(progressInterval);
     }
   };
 
@@ -291,7 +332,7 @@ export default function Dashboard({ theme, toggleTheme }: Props) {
       <StatusBar
         airport={state.airport}
         wsStatus={isDemoMode ? 'connected' : wsStatus}
-        lastUpdated={isDemoMode ? MOCK_DEMO_STATE.last_updated : state.last_updated}
+        lastUpdated={state.last_updated}
         theme={theme}
         toggleTheme={toggleTheme}
         onAirportSwitch={handleAirportSwitch}

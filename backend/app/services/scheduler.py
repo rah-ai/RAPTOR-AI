@@ -21,6 +21,8 @@ from app.services.weather import weather_service
 from app.services.risk_engine import (
     compute_aircraft_risk, compute_overall_risk, compute_forecast,
 )
+from app.services.ebird import fetch_live_bird_density
+from app.services.global_monitor import poll_global_airports
 
 logger = logging.getLogger("raptor.scheduler")
 
@@ -53,6 +55,7 @@ async def poll_aircraft():
                 ac, weather,
                 airport.latitude, airport.longitude,
                 app_state.historical_density,
+                app_state.live_bird_density,
             )
             aircraft_risks.append(risk)
 
@@ -64,13 +67,15 @@ async def poll_aircraft():
         await app_state.update_aircraft(aircraft_risks)
 
         # Compute overall airport risk
-        overall = compute_overall_risk(aircraft_risks)
+        overall = compute_overall_risk(
+            aircraft_risks, app_state.historical_density, app_state.live_bird_density
+        )
         await app_state.update_overall_risk(overall)
 
         # Update forecast
         forecast = compute_forecast(
             airport.latitude, airport.longitude,
-            weather, app_state.historical_density,
+            weather, app_state.historical_density, app_state.live_bird_density
         )
         await app_state.update_forecast(forecast)
 
@@ -97,7 +102,16 @@ async def poll_weather():
         )
         if weather:
             await app_state.update_weather(weather)
-            logger.info(f"Weather updated: {weather.raw_metar[:40]}...")
+            
+        # Also poll eBird
+        live_density = await fetch_live_bird_density(
+            app_state.current_airport.latitude,
+            app_state.current_airport.longitude,
+        )
+        app_state.live_bird_density = live_density
+
+        if weather:
+            logger.info(f"Weather & eBird updated: {weather.raw_metar[:40]}... (Live Density: {live_density:.2f})")
 
     except Exception as e:
         logger.error(f"Weather poll error: {e}", exc_info=True)
@@ -160,6 +174,16 @@ def start_scheduler():
         replace_existing=True,
         max_instances=1,
     )
+
+    scheduler.add_job(
+        poll_global_airports,
+        "interval",
+        seconds=45,  # Scan globe every 45 seconds
+        id="poll_global",
+        replace_existing=True,
+        max_instances=1,
+    )
+
     scheduler.add_job(
         ping_self,
         "interval",
