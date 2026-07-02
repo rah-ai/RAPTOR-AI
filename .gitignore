@@ -35,3 +35,7 @@ backend/data/wildlife_strikes.csv
 .idea/
 .DS_Store
 *.swp
+
+# Local env files
+.env.*
+*.local
