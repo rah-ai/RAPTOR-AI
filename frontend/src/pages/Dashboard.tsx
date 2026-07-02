@@ -339,7 +339,7 @@ export default function Dashboard({ theme, toggleTheme }: Props) {
       />
       
       {!isDemoMode && (
-        <div style={{ position: 'absolute', top: 12, left: '50%', transform: 'translateX(-50%)', zIndex: 2500 }}>
+        <div style={{ position: 'absolute', top: 12, left: '50%', transform: 'translateX(80px)', zIndex: 2500 }}>
           <button
             onClick={() => {
               loadDemo();

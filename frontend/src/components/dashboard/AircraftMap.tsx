@@ -342,7 +342,7 @@ export default function AircraftMap({
           }) : [];
 
           return (
-            <React.Fragment key={ac.icao24}>
+            <LayerGroup key={ac.icao24}>
               {birdFlocks.map((pos, idx) => (
                 <Marker key={`${ac.icao24}-bird-${idx}`} position={pos} icon={createBirdIcon()} zIndexOffset={1000} />
               ))}
@@ -412,8 +412,8 @@ export default function AircraftMap({
                   </div>
                 </div>
               </Popup>
-            </Marker>
-          </React.Fragment>
+              </Marker>
+            </LayerGroup>
           );
         })}
       </MapContainer>

@@ -65,7 +65,7 @@ class OpenSkyService:
             if OPENSKY_USERNAME and OPENSKY_PASSWORD:
                 auth = (OPENSKY_USERNAME, OPENSKY_PASSWORD)
                 
-            async with httpx.AsyncClient(timeout=15.0) as client:
+            async with httpx.AsyncClient(timeout=4.0) as client:
                 response = await client.get(OPENSKY_API_URL, params=params, auth=auth)
 
                 if response.status_code == 429:
@@ -105,6 +105,9 @@ class OpenSkyService:
             logger.error(f"OpenSky HTTP error: {e.response.status_code}")
             self._consecutive_failures += 1
             self._backoff_seconds = min(2 ** self._consecutive_failures * 5, 120)
+            if not self._cache:
+                self._cache = self._generate_mock_aircraft(lat, lon)
+                self._cache_time = now
             return self._cache, True
 
         except Exception as e:
